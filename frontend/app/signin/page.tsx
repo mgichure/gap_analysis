@@ -7,40 +7,62 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Eye, EyeOff, Lock, Mail, Zap, Sparkles, Building2 } from "lucide-react";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
+import { loginAction } from "@/lib/auth-actions";
+import { useRouter } from "next/navigation";
 
 export default function SignInPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string>("");
+  const router = useRouter();
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    setError("");
     
-    // Simulate API call
-    setTimeout(() => {
+    const formData = new FormData(e.currentTarget as HTMLFormElement);
+    const email = formData.get("email") as string;
+    const password = formData.get("password") as string;
+    
+    try {
+      const result = await loginAction({ email, password });
+      
+      if (result.success) {
+        router.push("/dashboard");
+      } else {
+        setError(result.error || "Login failed");
+      }
+    } catch (error) {
+      setError("An unexpected error occurred");
+    } finally {
       setIsLoading(false);
-      // Handle sign in logic here
-      console.log("Signing in...");
-    }, 2000);
+    }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-4">
+    <div className="min-h-screen flex items-center justify-center p-4" style={{ background: 'var(--background)' }}>
       {/* Background effects */}
-      <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 via-purple-500/5 to-cyan-500/10" />
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_30%,rgba(156,146,172,0.05)_0%,transparent_50%)] opacity-20" />
+      <div className="absolute inset-0 bg-gradient-to-r from-blue-500/3 via-purple-500/2 to-cyan-500/3 dark:from-blue-500/10 dark:via-purple-500/5 dark:to-cyan-500/10" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_30%,rgba(59,130,246,0.03)_0%,transparent_50%)] opacity-50 dark:opacity-20" />
       
       <div className="relative w-full max-w-md">
+        {/* Theme Toggle */}
+        <div className="absolute top-4 right-4 z-20">
+          <ThemeToggle />
+        </div>
+        
         {/* Logo and Header */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-blue-500 via-purple-600 to-cyan-500 rounded-2xl mb-4 shadow-2xl shadow-blue-500/25">
             <Zap className="w-8 h-8 text-white" />
           </div>
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-white via-blue-100 to-purple-100 bg-clip-text text-transparent mb-2">
+          <h1 className="text-3xl font-bold mb-2" style={{ color: 'var(--foreground)' }}>
             Welcome Back
           </h1>
-          <p className="text-slate-400">
+          <p style={{ color: 'var(--muted-foreground)' }}>
             Sign in to your Gap Analysis account
           </p>
         </div>
@@ -48,11 +70,16 @@ export default function SignInPage() {
         {/* Sign In Form */}
         <div className="relative">
           <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 via-purple-500/3 to-cyan-500/5 rounded-2xl blur-3xl" />
-          <div className="relative bg-gradient-to-br from-slate-800/50 via-slate-700/30 to-slate-800/50 backdrop-blur-xl border border-white/10 rounded-2xl p-8 shadow-2xl">
+          <div className="relative backdrop-blur-xl border rounded-2xl p-8 shadow-xl" style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}>
             <form onSubmit={handleSignIn} className="space-y-6">
+              {error && (
+                <div className="p-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded-md dark:text-red-400 dark:bg-red-900/20 dark:border-red-800">
+                  {error}
+                </div>
+              )}
               {/* Email Field */}
               <div className="space-y-2">
-                <Label htmlFor="email" className="text-slate-200 font-medium">
+                <Label htmlFor="email" className="font-medium" style={{ color: 'var(--foreground)' }}>
                   Email Address
                 </Label>
                 <div className="relative group">
@@ -63,7 +90,12 @@ export default function SignInPage() {
                       id="email"
                       type="email"
                       placeholder="Enter your email"
-                      className="pl-10 bg-slate-800/50 border-white/10 text-white placeholder:text-slate-400 focus:border-blue-500/50 focus:ring-blue-500/20 transition-all duration-300"
+                      className="pl-10 border transition-all duration-300"
+                      style={{ 
+                        backgroundColor: 'var(--input)', 
+                        borderColor: 'var(--border)', 
+                        color: 'var(--foreground)' 
+                      }}
                       required
                     />
                   </div>
@@ -72,7 +104,7 @@ export default function SignInPage() {
 
               {/* Password Field */}
               <div className="space-y-2">
-                <Label htmlFor="password" className="text-slate-200 font-medium">
+                <Label htmlFor="password" className="text-slate-700 font-medium dark:text-slate-200">
                   Password
                 </Label>
                 <div className="relative group">
@@ -83,14 +115,19 @@ export default function SignInPage() {
                       id="password"
                       type={showPassword ? "text" : "password"}
                       placeholder="Enter your password"
-                      className="pl-10 pr-10 bg-slate-800/50 border-white/10 text-white placeholder:text-slate-400 focus:border-blue-500/50 focus:ring-blue-500/20 transition-all duration-300"
+                      className="pl-10 pr-10 border transition-all duration-300"
+                      style={{ 
+                        backgroundColor: 'var(--input)', 
+                        borderColor: 'var(--border)', 
+                        color: 'var(--foreground)' 
+                      }}
                       required
                     />
                     <Button
                       type="button"
                       variant="ghost"
                       size="icon"
-                      className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 text-slate-400 hover:text-white hover:bg-white/5 rounded-lg transition-all duration-200"
+                      className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-all duration-200 dark:text-slate-400 dark:hover:text-white dark:hover:bg-white/5"
                       onClick={() => setShowPassword(!showPassword)}
                     >
                       {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -106,9 +143,9 @@ export default function SignInPage() {
                     id="remember"
                     checked={rememberMe}
                     onCheckedChange={(checked) => setRememberMe(checked as boolean)}
-                    className="border-white/20 data-[state=checked]:bg-blue-500 data-[state=checked]:border-blue-500"
+                    className="border-slate-300 data-[state=checked]:bg-blue-500 data-[state=checked]:border-blue-500 dark:border-white/20"
                   />
-                  <Label htmlFor="remember" className="text-sm text-slate-300 cursor-pointer">
+                  <Label htmlFor="remember" className="text-sm text-slate-600 cursor-pointer dark:text-slate-300">
                     Remember me
                   </Label>
                 </div>
@@ -143,10 +180,10 @@ export default function SignInPage() {
             {/* Divider */}
             <div className="relative my-6">
               <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-white/10" />
+                <div className="w-full border-t border-slate-200 dark:border-white/10" />
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-slate-800/50 text-slate-400">Or continue with</span>
+                <span className="px-2" style={{ backgroundColor: 'var(--card)', color: 'var(--muted-foreground)' }}>Or continue with</span>
               </div>
             </div>
 
@@ -154,7 +191,8 @@ export default function SignInPage() {
             <div className="space-y-3">
               <Button
                 variant="outline"
-                className="w-full bg-slate-800/50 border-white/10 text-slate-200 hover:bg-slate-700/50 hover:border-blue-500/30 transition-all duration-300 h-11"
+                className="w-full border transition-all duration-300 h-11"
+                style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)', color: 'var(--foreground)' }}
               >
                 <Building2 className="h-4 w-4 mr-2" />
                 Continue with Organization
@@ -165,7 +203,7 @@ export default function SignInPage() {
 
         {/* Sign Up Link */}
         <div className="text-center mt-6">
-          <p className="text-slate-400">
+          <p className="text-slate-600 dark:text-slate-400">
             Don't have an account?{" "}
             <Link
               href="/signup"
@@ -178,7 +216,7 @@ export default function SignInPage() {
 
         {/* Footer */}
         <div className="text-center mt-8">
-          <div className="flex items-center justify-center space-x-2 text-slate-500 text-sm">
+          <div className="flex items-center justify-center space-x-2 text-slate-400 text-sm dark:text-slate-500">
             <Sparkles className="w-4 h-4" />
             <span>Gap Analysis Platform • Enterprise Ready</span>
           </div>

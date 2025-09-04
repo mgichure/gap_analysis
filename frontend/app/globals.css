@@ -1,28 +1,28 @@
 @import "tailwindcss";
 
 :root {
-  /* Base colors */
-  --background: #f6f7ff; /* light tinted background */
-  --foreground: #0f172a; /* slate-900 */
+  /* Light theme colors - Beautiful and professional */
+  --background: #ffffff; /* Pure white background */
+  --foreground: #0f172a; /* Dark text for contrast */
 
-  /* Single-accent theme */
-  --primary: #4f46e5; /* indigo-600 */
+  /* Primary colors */
+  --primary: #4f46e5; /* Indigo-600 */
   --primary-foreground: #ffffff;
 
-  /* Supporting tokens used by UI components */
+  /* Supporting colors */
   --accent: var(--primary);
   --accent-foreground: var(--primary-foreground);
-  --muted: #eef2ff; /* indigo-50 */
-  --muted-foreground: #334155; /* slate-700 */
+  --muted: #f8fafc; /* Slate-50 */
+  --muted-foreground: #64748b; /* Slate-500 */
   --popover: #ffffff;
   --popover-foreground: var(--foreground);
   --card: #ffffff;
   --card-foreground: var(--foreground);
-  --border: #e5e7eb; /* gray-200 */
-  --input: #e5e7eb;
+  --border: #e2e8f0; /* Slate-200 */
+  --input: #f1f5f9; /* Slate-100 */
   --ring: var(--primary);
 
-  /* Charts (optional) */
+  /* Charts */
   --chart-1: var(--primary);
   --chart-2: #22c55e; /* green-500 */
   --chart-3: #f59e0b; /* amber-500 */
@@ -72,7 +72,7 @@
   }
 }
 
-/* Allow runtime theme switching via .dark class */
+/* Dark theme colors */
 .dark {
   --background: #0b1026; /* deep indigo slate */
   --foreground: #e5e7eb; /* gray-200 */

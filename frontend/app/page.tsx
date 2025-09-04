@@ -1,13 +1,24 @@
+"use client";
+
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { Zap, Shield, BarChart3, Users, ArrowRight, Sparkles, Building2, CheckCircle } from "lucide-react";
+import { useTheme } from "next-themes";
+import { useEffect, useState } from "react";
 
 export default function HomePage() {
+  const { theme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+    <div className="min-h-screen" style={{ background: 'var(--background)' }}>
       {/* Background effects */}
-      <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 via-purple-500/5 to-cyan-500/10" />
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_30%,rgba(156,146,172,0.05)_0%,transparent_50%)] opacity-20" />
+      <div className="absolute inset-0 bg-gradient-to-r from-blue-500/3 via-purple-500/2 to-cyan-500/3 dark:from-blue-500/10 dark:via-purple-500/5 dark:to-cyan-500/10" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_30%,rgba(59,130,246,0.03)_0%,transparent_50%)] opacity-50 dark:opacity-20" />
       
       {/* Navigation */}
       <nav className="relative z-10 flex items-center justify-between p-6">
@@ -15,14 +26,20 @@ export default function HomePage() {
           <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center">
             <Zap className="w-5 h-5 text-white" />
           </div>
-          <span className="text-xl font-bold bg-gradient-to-r from-white to-slate-300 bg-clip-text text-transparent">
+          <span className="text-xl font-bold" style={{ color: 'var(--foreground)' }}>
             Gap Analysis
           </span>
         </div>
         
         <div className="flex items-center space-x-4">
+          {mounted && (
+            <div className="text-xs text-slate-500 dark:text-slate-400">
+              Theme: {theme}
+            </div>
+          )}
+          <ThemeToggle />
           <Link href="/signin">
-            <Button variant="ghost" className="text-slate-300 hover:text-white hover:bg-white/5">
+            <Button variant="ghost" style={{ color: 'var(--foreground)' }} className="hover:bg-slate-100 dark:hover:bg-white/5">
               Sign In
             </Button>
           </Link>
@@ -37,15 +54,15 @@ export default function HomePage() {
       {/* Hero Section */}
       <div className="relative z-10 flex flex-col items-center text-center px-6 pt-20 pb-16">
         <div className="max-w-4xl mx-auto">
-          <h1 className="text-5xl md:text-6xl font-bold bg-gradient-to-r from-white via-blue-100 to-purple-100 bg-clip-text text-transparent mb-6 leading-tight">
+          <h1 className="text-5xl md:text-6xl font-bold mb-6 leading-tight" style={{ color: 'var(--foreground)' }}>
             Enterprise Security
             <br />
-            <span className="bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
               Gap Analysis Platform
             </span>
           </h1>
           
-          <p className="text-xl text-slate-300 mb-8 max-w-2xl mx-auto leading-relaxed">
+          <p className="text-xl mb-8 max-w-2xl mx-auto leading-relaxed" style={{ color: 'var(--muted-foreground)' }}>
             Comprehensive compliance and risk management for financial institutions. 
             Identify gaps, manage risks, and maintain regulatory compliance with our 
             enterprise-grade platform.
@@ -59,9 +76,9 @@ export default function HomePage() {
               </Button>
             </Link>
             <Link href="/dashboard">
-              <Button variant="outline" className="border-white/20 text-white hover:bg-white/5 hover:border-blue-500/30 h-14 px-8 text-lg font-semibold">
-                View Demo
-              </Button>
+                          <Button variant="outline" className="h-14 px-8 text-lg font-semibold" style={{ borderColor: 'var(--border)', color: 'var(--foreground)' }}>
+              View Demo
+            </Button>
             </Link>
           </div>
         </div>
@@ -71,10 +88,10 @@ export default function HomePage() {
       <div className="relative z-10 px-6 pb-20">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold text-white mb-4">
+            <h2 className="text-3xl font-bold mb-4" style={{ color: 'var(--foreground)' }}>
               Everything you need for compliance
             </h2>
-            <p className="text-slate-400 text-lg">
+            <p className="text-lg" style={{ color: 'var(--muted-foreground)' }}>
               Built for banks, microfinance institutions, and financial organizations
             </p>
           </div>
@@ -83,12 +100,12 @@ export default function HomePage() {
             {/* Feature 1 */}
             <div className="relative group">
               <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 to-purple-500/5 rounded-2xl blur opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-              <div className="relative bg-gradient-to-br from-slate-800/50 to-slate-700/30 border border-white/10 rounded-2xl p-6 hover:border-blue-500/30 transition-all duration-300">
+              <div className="relative rounded-2xl p-6 border transition-all duration-300" style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)', color: 'var(--card-foreground)' }}>
                 <div className="w-12 h-12 bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-xl flex items-center justify-center mb-4">
-                  <Shield className="w-6 h-6 text-blue-400" />
+                  <Shield className="w-6 h-6 text-blue-500" />
                 </div>
-                <h3 className="text-xl font-semibold text-white mb-3">Compliance Management</h3>
-                <p className="text-slate-400 leading-relaxed">
+                <h3 className="text-xl font-semibold mb-3" style={{ color: 'var(--foreground)' }}>Compliance Management</h3>
+                <p className="leading-relaxed" style={{ color: 'var(--muted-foreground)' }}>
                   Manage ISO 27001, PCI DSS, and regulatory compliance with automated assessments and real-time monitoring.
                 </p>
               </div>
@@ -97,12 +114,12 @@ export default function HomePage() {
             {/* Feature 2 */}
             <div className="relative group">
               <div className="absolute inset-0 bg-gradient-to-r from-purple-500/5 to-pink-500/5 rounded-2xl blur opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-              <div className="relative bg-gradient-to-br from-slate-800/50 to-slate-700/30 border border-white/10 rounded-2xl p-6 hover:border-purple-500/30 transition-all duration-300">
+              <div className="relative rounded-2xl p-6 border transition-all duration-300" style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)', color: 'var(--card-foreground)' }}>
                 <div className="w-12 h-12 bg-gradient-to-br from-purple-500/20 to-pink-500/20 rounded-xl flex items-center justify-center mb-4">
-                  <BarChart3 className="w-6 h-6 text-purple-400" />
+                  <BarChart3 className="w-6 h-6 text-purple-500" />
                 </div>
-                <h3 className="text-xl font-semibold text-white mb-3">Risk Assessment</h3>
-                <p className="text-slate-400 leading-relaxed">
+                <h3 className="text-xl font-semibold mb-3" style={{ color: 'var(--foreground)' }}>Risk Assessment</h3>
+                <p className="leading-relaxed" style={{ color: 'var(--muted-foreground)' }}>
                   Comprehensive risk identification, assessment, and mitigation strategies with advanced analytics and reporting.
                 </p>
               </div>
@@ -111,12 +128,12 @@ export default function HomePage() {
             {/* Feature 3 */}
             <div className="relative group">
               <div className="absolute inset-0 bg-gradient-to-r from-green-500/5 to-emerald-500/5 rounded-2xl blur opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-              <div className="relative bg-gradient-to-br from-slate-800/50 to-slate-700/30 border border-white/10 rounded-2xl p-6 hover:border-green-500/30 transition-all duration-300">
+              <div className="relative rounded-2xl p-6 border transition-all duration-300" style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)', color: 'var(--card-foreground)' }}>
                 <div className="w-12 h-12 bg-gradient-to-br from-green-500/20 to-emerald-500/20 rounded-xl flex items-center justify-center mb-4">
-                  <Users className="w-6 h-6 text-green-400" />
+                  <Users className="w-6 h-6 text-green-500" />
                 </div>
-                <h3 className="text-xl font-semibold text-white mb-3">Team Collaboration</h3>
-                <p className="text-slate-400 leading-relaxed">
+                <h3 className="text-xl font-semibold mb-3" style={{ color: 'var(--foreground)' }}>Team Collaboration</h3>
+                <p className="leading-relaxed" style={{ color: 'var(--muted-foreground)' }}>
                   Streamlined workflows, task management, and team collaboration tools for efficient compliance operations.
                 </p>
               </div>

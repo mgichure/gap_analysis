@@ -16,11 +16,29 @@ import {
 } from '@nestjs/swagger';
 import { LoginRequest } from './dto/login.request';
 import { AuthResponse } from './dto/auth.response';
+import { SignupRequest } from './dto/signup.request';
 
 @ApiTags('auth')
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
+
+  @Post('signup')
+  @ApiOperation({ summary: 'User signup with organization' })
+  @ApiBody({ type: SignupRequest })
+  @ApiOkResponse({ 
+    description: 'Signup successful',
+    type: AuthResponse 
+  })
+  @ApiResponse({ status: 400, description: 'Bad request - Invalid input data' })
+  @ApiResponse({ status: 409, description: 'Conflict - User or organization already exists' })
+  async signup(
+    @Body() signupData: SignupRequest,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    const result = await this.authService.signup(signupData, response);
+    return { message: 'Signup successful', user: { id: result.id, email: result.email } };
+  }
 
   @Post('login')
   @UseGuards(LocalAuthGuard)

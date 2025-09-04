@@ -8,12 +8,17 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Eye, EyeOff, Lock, Mail, User, Building2, Zap, Sparkles, Shield, CheckCircle } from "lucide-react";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
+import { signupAction } from "@/lib/auth-actions";
+import { useRouter } from "next/navigation";
 
 export default function SignUpPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [acceptTerms, setAcceptTerms] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string>("");
+  const router = useRouter();
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -31,13 +36,42 @@ export default function SignUpPage() {
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    setError("");
     
-    // Simulate API call
-    setTimeout(() => {
+    // Validate passwords match
+    if (formData.password !== formData.confirmPassword) {
+      setError("Passwords do not match");
       setIsLoading(false);
-      // Handle sign up logic here
-      console.log("Signing up...", formData);
-    }, 2000);
+      return;
+    }
+    
+    // Validate terms acceptance
+    if (!acceptTerms) {
+      setError("Please accept the terms and conditions");
+      setIsLoading(false);
+      return;
+    }
+    
+    try {
+      const result = await signupAction({
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        email: formData.email,
+        password: formData.password,
+        organization: formData.organization,
+        organizationType: formData.organizationType,
+      });
+      
+      if (result.success) {
+        router.push("/signin?message=Account created successfully. Please sign in.");
+      } else {
+        setError(result.error || "Signup failed");
+      }
+    } catch (error) {
+      setError("An unexpected error occurred");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const organizationTypes = [
@@ -50,21 +84,26 @@ export default function SignUpPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-4">
+    <div className="min-h-screen flex items-center justify-center p-4" style={{ background: 'var(--background)' }}>
       {/* Background effects */}
-      <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 via-purple-500/5 to-cyan-500/10" />
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_30%,rgba(156,146,172,0.05)_0%,transparent_50%)] opacity-20" />
+      <div className="absolute inset-0 bg-gradient-to-r from-blue-500/3 via-purple-500/2 to-cyan-500/3 dark:from-blue-500/10 dark:via-purple-500/5 dark:to-cyan-500/10" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_30%,rgba(59,130,246,0.03)_0%,transparent_50%)] opacity-50 dark:opacity-20" />
       
       <div className="relative w-full max-w-lg">
+        {/* Theme Toggle */}
+        <div className="absolute top-4 right-4 z-20">
+          <ThemeToggle />
+        </div>
+        
         {/* Logo and Header */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-blue-500 via-purple-600 to-cyan-500 rounded-2xl mb-4 shadow-2xl shadow-blue-500/25">
             <Zap className="w-8 h-8 text-white" />
           </div>
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-white via-blue-100 to-purple-100 bg-clip-text text-transparent mb-2">
+          <h1 className="text-3xl font-bold mb-2" style={{ color: 'var(--foreground)' }}>
             Create Account
           </h1>
-          <p className="text-slate-400">
+          <p style={{ color: 'var(--muted-foreground)' }}>
             Join the Gap Analysis platform
           </p>
         </div>
@@ -72,12 +111,17 @@ export default function SignUpPage() {
         {/* Sign Up Form */}
         <div className="relative">
           <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 via-purple-500/3 to-cyan-500/5 rounded-2xl blur-3xl" />
-          <div className="relative bg-gradient-to-br from-slate-800/50 via-slate-700/30 to-slate-800/50 backdrop-blur-xl border border-white/10 rounded-2xl p-8 shadow-2xl">
+          <div className="relative backdrop-blur-xl border rounded-2xl p-8 shadow-xl" style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}>
             <form onSubmit={handleSignUp} className="space-y-6">
+              {error && (
+                <div className="p-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded-md dark:text-red-400 dark:bg-red-900/20 dark:border-red-800">
+                  {error}
+                </div>
+              )}
               {/* Name Fields */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="firstName" className="text-slate-200 font-medium">
+                  <Label htmlFor="firstName" className="font-medium" style={{ color: 'var(--foreground)' }}>
                     First Name
                   </Label>
                   <div className="relative group">
@@ -90,7 +134,12 @@ export default function SignUpPage() {
                         placeholder="First name"
                         value={formData.firstName}
                         onChange={(e) => handleInputChange("firstName", e.target.value)}
-                        className="pl-10 bg-slate-800/50 border-white/10 text-white placeholder:text-slate-400 focus:border-blue-500/50 focus:ring-blue-500/20 transition-all duration-300"
+                        className="pl-10 border transition-all duration-300"
+                        style={{ 
+                          backgroundColor: 'var(--input)', 
+                          borderColor: 'var(--border)', 
+                          color: 'var(--foreground)' 
+                        }}
                         required
                       />
                     </div>
@@ -98,7 +147,7 @@ export default function SignUpPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="lastName" className="text-slate-200 font-medium">
+                  <Label htmlFor="lastName" className="text-slate-700 font-medium dark:text-slate-200">
                     Last Name
                   </Label>
                   <div className="relative group">
@@ -111,7 +160,12 @@ export default function SignUpPage() {
                         placeholder="Last name"
                         value={formData.lastName}
                         onChange={(e) => handleInputChange("lastName", e.target.value)}
-                        className="pl-10 bg-slate-800/50 border-white/10 text-white placeholder:text-slate-400 focus:border-blue-500/50 focus:ring-blue-500/20 transition-all duration-300"
+                        className="pl-10 border transition-all duration-300"
+                        style={{ 
+                          backgroundColor: 'var(--input)', 
+                          borderColor: 'var(--border)', 
+                          color: 'var(--foreground)' 
+                        }}
                         required
                       />
                     </div>
@@ -121,7 +175,7 @@ export default function SignUpPage() {
 
               {/* Email Field */}
               <div className="space-y-2">
-                <Label htmlFor="email" className="text-slate-200 font-medium">
+                <Label htmlFor="email" className="text-slate-700 font-medium dark:text-slate-200">
                   Email Address
                 </Label>
                 <div className="relative group">
@@ -144,7 +198,7 @@ export default function SignUpPage() {
               {/* Organization Fields */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="organization" className="text-slate-200 font-medium">
+                  <Label htmlFor="organization" className="text-slate-700 font-medium dark:text-slate-200">
                     Organization Name
                   </Label>
                   <div className="relative group">
@@ -157,7 +211,12 @@ export default function SignUpPage() {
                         placeholder="Organization name"
                         value={formData.organization}
                         onChange={(e) => handleInputChange("organization", e.target.value)}
-                        className="pl-10 bg-slate-800/50 border-white/10 text-white placeholder:text-slate-400 focus:border-blue-500/50 focus:ring-blue-500/20 transition-all duration-300"
+                        className="pl-10 border transition-all duration-300"
+                        style={{ 
+                          backgroundColor: 'var(--input)', 
+                          borderColor: 'var(--border)', 
+                          color: 'var(--foreground)' 
+                        }}
                         required
                       />
                     </div>
@@ -165,18 +224,18 @@ export default function SignUpPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="organizationType" className="text-slate-200 font-medium">
+                  <Label htmlFor="organizationType" className="text-slate-700 font-medium dark:text-slate-200">
                     Organization Type
                   </Label>
                   <Select value={formData.organizationType} onValueChange={(value) => handleInputChange("organizationType", value)}>
-                    <SelectTrigger className="bg-slate-800/50 border-white/10 text-white focus:border-blue-500/50 focus:ring-blue-500/20">
+                    <SelectTrigger className="border transition-all duration-300" style={{ backgroundColor: 'var(--input)', borderColor: 'var(--border)', color: 'var(--foreground)' }}>
                       <SelectValue placeholder="Select type" />
                     </SelectTrigger>
-                    <SelectContent className="bg-slate-800 border-white/10 text-white">
+                    <SelectContent className="bg-white border-slate-200 text-slate-900 dark:bg-slate-800 dark:border-white/10 dark:text-white">
                       {organizationTypes.map((type) => {
                         const Icon = type.icon;
                         return (
-                          <SelectItem key={type.value} value={type.value} className="hover:bg-slate-700">
+                          <SelectItem key={type.value} value={type.value} className="hover:bg-slate-100 dark:hover:bg-slate-700">
                             <div className="flex items-center space-x-2">
                               <Icon className="w-4 h-4" />
                               <span>{type.label}</span>
@@ -192,7 +251,7 @@ export default function SignUpPage() {
               {/* Password Fields */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="password" className="text-slate-200 font-medium">
+                  <Label htmlFor="password" className="text-slate-700 font-medium dark:text-slate-200">
                     Password
                   </Label>
                   <div className="relative group">
@@ -205,14 +264,19 @@ export default function SignUpPage() {
                         placeholder="Create password"
                         value={formData.password}
                         onChange={(e) => handleInputChange("password", e.target.value)}
-                        className="pl-10 pr-10 bg-slate-800/50 border-white/10 text-white placeholder:text-slate-400 focus:border-blue-500/50 focus:ring-blue-500/20 transition-all duration-300"
+                        className="pl-10 pr-10 border transition-all duration-300"
+                        style={{ 
+                          backgroundColor: 'var(--input)', 
+                          borderColor: 'var(--border)', 
+                          color: 'var(--foreground)' 
+                        }}
                         required
                       />
                       <Button
                         type="button"
                         variant="ghost"
                         size="icon"
-                        className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 text-slate-400 hover:text-white hover:bg-white/5 rounded-lg transition-all duration-200"
+                        className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-all duration-200 dark:text-slate-400 dark:hover:text-white dark:hover:bg-white/5"
                         onClick={() => setShowPassword(!showPassword)}
                       >
                         {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -222,7 +286,7 @@ export default function SignUpPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="confirmPassword" className="text-slate-200 font-medium">
+                  <Label htmlFor="confirmPassword" className="text-slate-700 font-medium dark:text-slate-200">
                     Confirm Password
                   </Label>
                   <div className="relative group">
@@ -235,14 +299,19 @@ export default function SignUpPage() {
                         placeholder="Confirm password"
                         value={formData.confirmPassword}
                         onChange={(e) => handleInputChange("confirmPassword", e.target.value)}
-                        className="pl-10 pr-10 bg-slate-800/50 border-white/10 text-white placeholder:text-slate-400 focus:border-blue-500/50 focus:ring-blue-500/20 transition-all duration-300"
+                        className="pl-10 pr-10 border transition-all duration-300"
+                        style={{ 
+                          backgroundColor: 'var(--input)', 
+                          borderColor: 'var(--border)', 
+                          color: 'var(--foreground)' 
+                        }}
                         required
                       />
                       <Button
                         type="button"
                         variant="ghost"
                         size="icon"
-                        className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 text-slate-400 hover:text-white hover:bg-white/5 rounded-lg transition-all duration-200"
+                        className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-all duration-200 dark:text-slate-400 dark:hover:text-white dark:hover:bg-white/5"
                         onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                       >
                         {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -258,13 +327,13 @@ export default function SignUpPage() {
                   id="terms"
                   checked={acceptTerms}
                   onCheckedChange={(checked) => setAcceptTerms(checked as boolean)}
-                  className="mt-1 border-white/20 data-[state=checked]:bg-blue-500 data-[state=checked]:border-blue-500"
+                  className="mt-1 border-slate-300 data-[state=checked]:bg-blue-500 data-[state=checked]:border-blue-500 dark:border-white/20"
                 />
                 <div className="space-y-1">
-                  <Label htmlFor="terms" className="text-sm text-slate-300 cursor-pointer">
+                  <Label htmlFor="terms" className="text-sm text-slate-600 cursor-pointer dark:text-slate-300">
                     I accept the terms and conditions
                   </Label>
-                  <p className="text-xs text-slate-400">
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
                     By creating an account, you agree to our{" "}
                     <Link href="/terms" className="text-blue-400 hover:text-blue-300">
                       Terms of Service
@@ -300,10 +369,10 @@ export default function SignUpPage() {
             {/* Divider */}
             <div className="relative my-6">
               <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-white/10" />
+                <div className="w-full border-t border-slate-200 dark:border-white/10" />
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-slate-800/50 text-slate-400">Or continue with</span>
+                <span className="px-2" style={{ backgroundColor: 'var(--card)', color: 'var(--muted-foreground)' }}>Or continue with</span>
               </div>
             </div>
 
@@ -311,7 +380,8 @@ export default function SignUpPage() {
             <div className="space-y-3">
               <Button
                 variant="outline"
-                className="w-full bg-slate-800/50 border-white/10 text-slate-200 hover:bg-slate-700/50 hover:border-blue-500/30 transition-all duration-300 h-11"
+                className="w-full border transition-all duration-300 h-11"
+                style={{ backgroundColor: 'var(--input)', borderColor: 'var(--border)', color: 'var(--foreground)' }}
               >
                 <Building2 className="h-4 w-4 mr-2" />
                 Sign up with Organization
@@ -322,7 +392,7 @@ export default function SignUpPage() {
 
         {/* Sign In Link */}
         <div className="text-center mt-6">
-          <p className="text-slate-400">
+          <p className="text-slate-600 dark:text-slate-400">
             Already have an account?{" "}
             <Link
               href="/signin"
@@ -335,7 +405,7 @@ export default function SignUpPage() {
 
         {/* Footer */}
         <div className="text-center mt-8">
-          <div className="flex items-center justify-center space-x-2 text-slate-500 text-sm">
+          <div className="flex items-center justify-center space-x-2 text-slate-400 text-sm dark:text-slate-500">
             <Sparkles className="w-4 h-4" />
             <span>Gap Analysis Platform • Enterprise Ready</span>
           </div>

@@ -8,6 +8,14 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   app.useGlobalPipes(new ValidationPipe());
   app.use(cookieParser());
+  
+  // Enable CORS for frontend
+  app.enableCors({
+    origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Tenant-Id'],
+  });
 
   // Swagger configuration
   const config = new DocumentBuilder()
@@ -63,6 +71,6 @@ async function bootstrap() {
     customSiteTitle: 'Gap Analysis API Documentation',
   });
 
-  await app.listen(process.env.PORT ?? 3001);
+  await app.listen(process.env.PORT ?? 3003);
 }
 bootstrap();
