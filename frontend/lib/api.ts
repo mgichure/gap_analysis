@@ -56,6 +56,15 @@ export async function apiRequest<T = unknown>(
     }
   }
 
+  // Attach tenant header from localStorage if present (client side only)
+  try {
+    // @ts-expect-error window guard
+    if (typeof window !== 'undefined') {
+      const tenant = localStorage.getItem('tenantId') || localStorage.getItem('tenantSlug');
+      if (tenant) headers['X-Tenant-Id'] = tenant;
+    }
+  } catch {}
+
   const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"}${endpoint}`, {
     ...fetchOptions,
     headers,

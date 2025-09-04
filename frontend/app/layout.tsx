@@ -18,6 +18,14 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              "(function(){try{var t=localStorage.getItem('theme');if(!t){t=window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';}document.documentElement.classList.remove('dark','light');document.documentElement.classList.add(t);}catch(e){}})();",
+          }}
+        />
+      </head>
       <body className={inter.className}>
         <TenantProvider>
           {children}

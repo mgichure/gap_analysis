@@ -13,13 +13,631 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model User {
+// ========================================
+// ENUMS FOR BANKING COMPLIANCE
+// ========================================
+
+enum TenantType {
+  BANK
+  MICROFINANCE
+  SACCO
+  INSURANCE
+  FINTECH
+  REGULATOR
+}
+
+enum TenantStatus {
+  ACTIVE
+  SUSPENDED
+  COMPLIANCE_REVIEW
+  DEACTIVATED
+}
+
+enum UserRole {
+  SUPER_ADMIN
+  TENANT_ADMIN
+  COMPLIANCE_OFFICER
+  RISK_MANAGER
+  AUDITOR
+  IT_SECURITY
+  BRANCH_MANAGER
+  EMPLOYEE
+}
+
+enum RiskCategory {
+  OPERATIONAL
+  FINANCIAL
+  COMPLIANCE
+  STRATEGIC
+  TECHNOLOGY
+  REPUTATIONAL
+}
+
+enum RiskLikelihood {
+  VERY_LOW
+  LOW
+  MEDIUM
+  HIGH
+  VERY_HIGH
+}
+
+enum RiskImpact {
+  MINIMAL
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum RiskStatus {
+  IDENTIFIED
+  ASSESSED
+  MITIGATED
+  ACCEPTED
+  MONITORED
+}
+
+enum ActionType {
+  REMEDIATION
+  PREVENTIVE
+  CORRECTIVE
+  IMPROVEMENT
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum ActionStatus {
+  PLANNED
+  IN_PROGRESS
+  ON_HOLD
+  COMPLETED
+  VERIFIED
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+  PREFER_NOT_TO_SAY
+}
+
+enum EmploymentStatus {
+  ACTIVE
+  PROBATION
+  SUSPENDED
+  TERMINATED
+  RETIRED
+  ON_LEAVE
+}
+
+enum WorkSchedule {
+  FULL_TIME
+  PART_TIME
+  CONTRACT
+  INTERN
+  FREELANCE
+}
+
+enum PerformanceRating {
+  EXCELLENT
+  GOOD
+  AVERAGE
+  BELOW_AVERAGE
+  UNSATISFACTORY
+}
+
+enum ComplianceType {
+  INTERNATIONAL
+  REGIONAL
+  LOCAL
+  REGULATORY
+}
+
+enum ComplianceStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  UNDER_REVIEW
+  CERTIFIED
+  EXPIRED
+  SUSPENDED
+}
+
+enum EncryptionLevel {
+  AES_128
+  AES_256
+  AES_512
+}
+
+enum BackupFrequency {
+  HOURLY
+  DAILY
+  WEEKLY
+  MONTHLY
+}
+
+// ========================================
+// CORE TENANT MODEL
+// ========================================
+
+model Tenant {
   id          String   @id @default(cuid())
-  email       String   @unique
-  password    String
-  refreshToken String?
+  name        String   // "Equity Bank Kenya"
+  slug        String   @unique // "equity-bank-ke"
+  type        TenantType // BANK, MICROFINANCE, SACCO, INSURANCE
+  status      TenantStatus @default(ACTIVE) // ACTIVE, SUSPENDED, COMPLIANCE_REVIEW
+  
+  // Banking-specific fields
+  licenseNumber String? // "CBK/001/2024"
+  regulator    String? // "Central Bank of Kenya"
+  complianceScore Int @default(0)
+  lastAuditDate DateTime?
+  
+  // Security & Compliance
+  encryptionLevel EncryptionLevel @default(AES_256)
+  dataRetentionDays Int @default(2555) // 7 years
+  backupFrequency BackupFrequency @default(DAILY)
+  
+  // Business metrics
+  employeeCount Int @default(0)
+  customerCount Int @default(0)
+  annualRevenue Decimal? @db.Decimal(15,2)
+  
+  // Contact Information
+  address     String?
+  phone       String?
+  email       String?
+  website     String?
+  
+  // Relationships
+  users        User[]
+  branches     Branch[]
+  departments  Department[]
+  complianceFrameworks ComplianceFramework[]
+  risks        Risk[]
+  actions      Action[]
+  evidence     Evidence[]
+  assessments  Assessment[]
+  auditLogs    AuditLog[]
+  complianceReports ComplianceReport[]
+  
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  
+  @@map("tenants")
+}
 
+// ========================================
+// USER MANAGEMENT
+// ========================================
+
+model User {
+  id          String   @id @default(cuid())
+  email       String
+  password    String
+  refreshToken String?
+  
+  // Personal Information
+  firstName   String
+  lastName    String
+  middleName  String?
+  phone       String?
+  mobile      String?
+  dateOfBirth DateTime?
+  gender      Gender?
+  
+  // Professional Information
+  jobTitle    String? // "Senior Compliance Officer", "Risk Manager"
+  employeeId  String? // "EMP001"
+  employeeNumber String? // "2024001"
+  hireDate    DateTime?
+  employmentStatus EmploymentStatus @default(ACTIVE)
+  
+  // Banking-specific user fields
+  role        UserRole // ADMIN, COMPLIANCE_OFFICER, RISK_MANAGER, AUDITOR
+  department  String? // "Risk Management", "Compliance", "IT Security"
+  branchId    String?
+  branch      Branch? @relation(fields: [branchId], references: [id])
+  
+  // Contact & Address
+  workAddress String?
+  homeAddress String?
+  emergencyContact String?
+  emergencyPhone   String?
+  emergencyRelationship String?
+  
+  // Additional Professional Details
+  supervisorId String?
+  supervisor  User? @relation("UserSupervisor", fields: [supervisorId], references: [id])
+  directReports User[] @relation("UserSupervisor")
+  costCenter  String?
+  salaryGrade String?
+  workSchedule WorkSchedule?
+  
+  // Security & Access Control
+  mfaEnabled  Boolean @default(true)
+  lastLogin   DateTime?
+  failedLoginAttempts Int @default(0)
+  accountLocked Boolean @default(false)
+  passwordChangedAt DateTime?
+  
+  // Compliance & Training
+  trainingCompleted Boolean @default(false)
+  lastTrainingDate DateTime?
+  nextTrainingDate DateTime?
+  complianceCertifications String[] // ["ISO27001", "PCI-DSS"]
+  trainingHistory String[] // ["ISO27001-2024-01", "PCI-DSS-2024-03"]
+  trainingScore Int? // 0-100
+  complianceScore Int? // 0-100
+  
+  // Audit & Monitoring
+  lastAuditDate DateTime?
+  auditFindings String[]
+  riskAssessmentScore Int? // 0-100
+  performanceRating PerformanceRating?
+  lastPerformanceReview DateTime?
+  
+  // Relationships
+  ownedRisks     Risk[] @relation("RiskOwner")
+  assignedRisks  Risk[] @relation("RiskAssignee")
+  ownedActions   Action[] @relation("ActionOwner")
+  assignedActions Action[] @relation("ActionAssignee")
+  reviewedActions Action[] @relation("ActionReviewer")
+  reviewableActions Action[] @relation("ActionReviewedBy")
+  departmentHead Department[] @relation("DepartmentHead")
+  
+  // Additional Metadata
+  notes         String?
+  tags          String[] // ["SENIOR_STAFF", "COMPLIANCE_EXPERT", "RISK_SPECIALIST"]
+  isActive      Boolean @default(true)
+  lastActivity  DateTime?
+  preferences   Json? // User preferences and settings
+  
+  tenantId    String
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  
+  @@unique([tenantId, email])
+  @@unique([tenantId, employeeId])
   @@map("users")
+}
+
+// ========================================
+// BRANCH & DEPARTMENT MANAGEMENT
+// ========================================
+
+model Branch {
+  id          String   @id @default(cuid())
+  name        String   // "Nairobi Main Branch"
+  code        String   // "NBI001"
+  address     String
+  phone       String
+  email       String
+  
+  // Banking metrics
+  customerCount Int @default(0)
+  transactionVolume Decimal @default(0) @db.Decimal(15,2)
+  
+  // Location
+  latitude    Float?
+  longitude   Float?
+  timezone    String @default("Africa/Nairobi")
+  
+  // Status
+  isActive    Boolean @default(true)
+  openingHours String? // "8:00 AM - 5:00 PM"
+  
+  tenantId    String
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  users       User[]
+  
+  @@unique([tenantId, code])
+  @@map("branches")
+}
+
+model Department {
+  id          String   @id @default(cuid())
+  name        String   // "Risk Management"
+  code        String   // "RM001"
+  description String?
+  
+  // Department head
+  headId      String?
+  head        User? @relation("DepartmentHead", fields: [headId], references: [id])
+  
+  // Compliance focus
+  primaryComplianceFramework String?
+  riskTolerance String?
+  
+  tenantId    String
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  
+  @@unique([tenantId, code])
+  @@map("departments")
+}
+
+// ========================================
+// COMPLIANCE FRAMEWORKS
+// ========================================
+
+model ComplianceFramework {
+  id          String   @id @default(cuid())
+  name        String   // "ISO 27001:2022", "PCI DSS 4.0", "CBK Guidelines"
+  version     String   // "2022", "4.0", "2024"
+  type        ComplianceType // INTERNATIONAL, REGIONAL, LOCAL
+  regulator   String? // "ISO", "PCI SSC", "Central Bank of Kenya"
+  
+  // Compliance status
+  status      ComplianceStatus @default(NOT_STARTED) // NOT_STARTED, IN_PROGRESS, CERTIFIED, EXPIRED
+  certificationDate DateTime?
+  expiryDate  DateTime?
+  nextAuditDate DateTime?
+  
+  // Scoring & Metrics
+  currentScore Int @default(0)
+  targetScore  Int @default(100)
+  gapCount     Int @default(0)
+  riskCount    Int @default(0)
+  
+  // Requirements
+  totalRequirements Int @default(0)
+  implementedRequirements Int @default(0)
+  pendingRequirements Int @default(0)
+  
+  // Documentation
+  policyDocuments String[]
+  procedures      String[]
+  forms          String[]
+  
+  tenantId    String
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  
+  @@map("compliance_frameworks")
+}
+
+// ========================================
+// RISK MANAGEMENT
+// ========================================
+
+model Risk {
+  id          String   @id @default(cuid())
+  title       String
+  description String
+  category    RiskCategory // OPERATIONAL, FINANCIAL, COMPLIANCE, STRATEGIC, TECHNOLOGY
+  subcategory String? // "Cybersecurity", "Data Privacy", "Regulatory Compliance"
+  
+  // Risk Assessment
+  likelihood  RiskLikelihood // VERY_LOW, LOW, MEDIUM, HIGH, VERY_HIGH
+  impact      RiskImpact // MINIMAL, LOW, MEDIUM, HIGH, CRITICAL
+  inherentRiskScore Int // Calculated field
+  
+  // Mitigation
+  status      RiskStatus @default(IDENTIFIED) // IDENTIFIED, ASSESSED, MITIGATED, ACCEPTED, MONITORED
+  mitigationStrategy String?
+  residualRiskScore Int?
+  
+  // Banking-specific
+  regulatoryImpact Boolean @default(false)
+  customerImpact   Boolean @default(false)
+  financialImpact  Decimal? @db.Decimal(15,2)
+  
+  // Assignments
+  ownerId     String
+  owner       User   @relation("RiskOwner", fields: [ownerId], references: [id])
+  assigneeId  String?
+  assignee    User? @relation("RiskAssignee", fields: [assigneeId], references: [id])
+  
+  // Compliance
+  linkedFrameworks String[] // ["ISO27001", "PCI-DSS"]
+  auditFindings    String?
+  
+  // Timeline
+  identifiedDate DateTime @default(now())
+  targetMitigationDate DateTime?
+  lastReviewDate DateTime?
+  
+  tenantId    String
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@map("risks")
+}
+
+// ========================================
+// ACTION MANAGEMENT
+// ========================================
+
+model Action {
+  id          String   @id @default(cuid())
+  title       String
+  description String
+  type        ActionType // REMEDIATION, PREVENTIVE, CORRECTIVE, IMPROVEMENT
+  
+  // Banking-specific
+  priority    Priority @default(MEDIUM) // LOW, MEDIUM, HIGH, CRITICAL
+  regulatoryDeadline DateTime?
+  complianceImpact   Boolean @default(false)
+  
+  // Status & Progress
+  status      ActionStatus @default(PLANNED) // PLANNED, IN_PROGRESS, ON_HOLD, COMPLETED, VERIFIED
+  progress    Int @default(0) // 0-100%
+  
+  // Assignments
+  assigneeId  String
+  assignee    User @relation("ActionOwner", fields: [assigneeId], references: [id])
+  reviewerId  String?
+  reviewer    User? @relation("ActionReviewer", fields: [reviewerId], references: [id])
+  
+  // Opposite relations for User model
+  assignedTo User[] @relation("ActionAssignee")
+  reviewedBy User[] @relation("ActionReviewedBy")
+  
+  // Timeline
+  startDate   DateTime
+  dueDate     DateTime
+  completedDate DateTime?
+  
+  // Resources
+  estimatedHours Int?
+  actualHours    Int?
+  budget         Decimal? @db.Decimal(15,2)
+  
+  // Compliance
+  linkedRisks   String[] // Risk IDs
+  evidenceRequired Boolean @default(false)
+  
+  // Notes & Updates
+  notes       String?
+  updates     String[]
+  
+  tenantId    String
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  
+  @@map("actions")
+}
+
+// ========================================
+// EVIDENCE & ASSESSMENTS
+// ========================================
+
+model Evidence {
+  id          String   @id @default(cuid())
+  filename    String
+  fileType    String
+  fileSize    Int
+  filePath    String
+  
+  // Metadata
+  title       String
+  description String?
+  tags        String[]
+  
+  // Compliance linking
+  linkedRequirement String? // "ISO27001-A.9.1"
+  linkedRisk        String? // Risk ID
+  linkedAction      String? // Action ID
+  
+  // Upload information
+  uploadedBy  String
+  uploadedAt  DateTime @default(now())
+  
+  // Verification
+  verifiedBy  String?
+  verifiedAt  DateTime?
+  verificationNotes String?
+  
+  // Access control
+  isPublic    Boolean @default(false)
+  accessLevel String @default("RESTRICTED") // PUBLIC, RESTRICTED, CONFIDENTIAL
+  
+  tenantId    String
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  
+  @@map("evidence")
+}
+
+model Assessment {
+  id          String   @id @default(cuid())
+  title       String
+  description String
+  
+  // Assessment details
+  framework   String // "ISO27001", "PCI-DSS"
+  scope       String
+  methodology String
+  
+  // Scoring
+  totalScore  Int
+  achievedScore Int
+  gapScore    Int
+  
+  // Timeline
+  startDate   DateTime
+  endDate     DateTime
+  nextAssessmentDate DateTime?
+  
+  // Status
+  status      String @default("PLANNED") // PLANNED, IN_PROGRESS, COMPLETED, REVIEWED
+  
+  // Participants
+  assessor    String
+  participants String[]
+  
+  // Results
+  findings    String[]
+  recommendations String[]
+  
+  tenantId    String
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  
+  @@map("assessments")
+}
+
+// ========================================
+// AUDIT & COMPLIANCE TRACKING
+// ========================================
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  
+  // Action details
+  action      String // "CREATE", "UPDATE", "DELETE", "LOGIN", "LOGOUT"
+  entityType  String // "User", "Risk", "Action", "Evidence"
+  entityId    String?
+  
+  // User context
+  userId      String?
+  userEmail   String?
+  userRole    String?
+  
+  // Changes
+  oldValues   Json?
+  newValues   Json?
+  
+  // Metadata
+  ipAddress   String?
+  userAgent   String?
+  timestamp   DateTime @default(now())
+  
+  tenantId    String
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  
+  @@map("audit_logs")
+}
+
+model ComplianceReport {
+  id          String   @id @default(cuid())
+  
+  // Report details
+  title       String
+  type        String // "MONTHLY", "QUARTERLY", "ANNUAL", "INCIDENT"
+  period      String // "Q1 2024", "2024"
+  
+  // Content
+  summary     String
+  findings    String[]
+  recommendations String[]
+  actionItems String[]
+  
+  // Status
+  status      String @default("DRAFT") // DRAFT, REVIEWED, APPROVED, SUBMITTED
+  
+  // Approvals
+  preparedBy  String
+  reviewedBy  String?
+  approvedBy  String?
+  
+  // Timeline
+  dueDate     DateTime
+  submittedDate DateTime?
+  
+  tenantId    String
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  
+  @@map("compliance_reports")
 }

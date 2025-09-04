@@ -19,9 +19,22 @@ export class GoogleStrategy extends PassportStrategy(Strategy) {
   }
 
   async validate(_accessToken: string, _refreshToken: string, profile: any) {
+    // Extract user information from Google profile
+    const email = profile.emails[0]?.value;
+    const firstName = profile.name?.givenName || 'Unknown';
+    const lastName = profile.name?.familyName || 'User';
+    
+    // For Google OAuth users, we need to set a default tenant and role
+    // In a real application, you might want to handle tenant selection differently
+    const defaultTenantId = process.env.DEFAULT_TENANT_ID || 'default-tenant';
+    
     return this.usersService.getOrCreateUser({
-      email: profile.emails[0]?.value,
-      password: '',
+      email,
+      password: '', // OAuth users don't have passwords
+      firstName,
+      lastName,
+      role: 'EMPLOYEE', // Default role for OAuth users
+      tenantId: defaultTenantId,
     });
   }
 }

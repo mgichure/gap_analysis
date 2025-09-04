@@ -5,6 +5,8 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
 import { PrismaModule } from './prisma/prisma.module';
+import { MiddlewareConsumer, NestModule } from '@nestjs/common';
+import { TenantResolverMiddleware } from './common/tenant-resolver.middleware';
 
 @Module({
   imports: [
@@ -17,4 +19,8 @@ import { PrismaModule } from './prisma/prisma.module';
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(TenantResolverMiddleware).forRoutes('*');
+  }
+}

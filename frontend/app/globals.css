@@ -1,22 +1,96 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Base colors */
+  --background: #f6f7ff; /* light tinted background */
+  --foreground: #0f172a; /* slate-900 */
+
+  /* Single-accent theme */
+  --primary: #4f46e5; /* indigo-600 */
+  --primary-foreground: #ffffff;
+
+  /* Supporting tokens used by UI components */
+  --accent: var(--primary);
+  --accent-foreground: var(--primary-foreground);
+  --muted: #eef2ff; /* indigo-50 */
+  --muted-foreground: #334155; /* slate-700 */
+  --popover: #ffffff;
+  --popover-foreground: var(--foreground);
+  --card: #ffffff;
+  --card-foreground: var(--foreground);
+  --border: #e5e7eb; /* gray-200 */
+  --input: #e5e7eb;
+  --ring: var(--primary);
+
+  /* Charts (optional) */
+  --chart-1: var(--primary);
+  --chart-2: #22c55e; /* green-500 */
+  --chart-3: #f59e0b; /* amber-500 */
+  --chart-4: #ef4444; /* red-500 */
+  --chart-5: #06b6d4; /* cyan-500 */
+  --chart-bar-fill: #374151; /* gray-700 for light mode bar fill */
+  --chart-radar-fill: #374151; /* gray-700 for light mode radar area fill */
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
 @media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+  :root:not(.dark):not(.light) {
+    --background: #0b1026; /* deep indigo slate */
+    --foreground: #e5e7eb; /* gray-200 */
+    --primary: #6366f1; /* indigo-500/600 */
+    --primary-foreground: #0b1026;
+    --accent: var(--primary);
+    --accent-foreground: #0b1026;
+    --muted: #11183a; /* darker tint */
+    --muted-foreground: #cbd5e1; /* slate-300 */
+    --popover: #0f172a;
+    --popover-foreground: var(--foreground);
+    --card: #0f172a;
+    --card-foreground: var(--foreground);
+    --border: #1f2937; /* gray-800 */
+    --input: #1f2937;
+    --ring: var(--primary);
   }
+}
+
+/* Allow runtime theme switching via .dark class */
+.dark {
+  --background: #0b1026; /* deep indigo slate */
+  --foreground: #e5e7eb; /* gray-200 */
+  --primary: #6366f1; /* indigo-500/600 */
+  --primary-foreground: #0b1026;
+  --accent: var(--primary);
+  --accent-foreground: #0b1026;
+  --muted: #11183a; /* darker tint */
+  --muted-foreground: #cbd5e1; /* slate-300 */
+  --popover: #0f172a;
+  --popover-foreground: var(--foreground);
+  --card: #0f172a;
+  --card-foreground: var(--foreground);
+  --border: #1f2937; /* gray-800 */
+  --input: #1f2937;
+  --ring: var(--primary);
+  --chart-bar-fill: #ffffff; /* dark mode bar fill */
+  --chart-radar-fill: #ffffff; /* dark mode radar area fill */
 }
 
 body {
