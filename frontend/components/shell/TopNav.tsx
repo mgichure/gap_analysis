@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Search, Bell, User, Settings, LogOut, Sparkles, Zap } from "lucide-react";
+import { Search, Bell, User, Settings, LogOut, Sparkles, Zap, Building2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -14,10 +14,11 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useTenant } from "@/lib/tenancy";
-import { TenantSwitcher } from "./TenantSwitcher";
+import { useUser } from "@/lib/user-context";
 
 export function TopNav() {
   const { tenant } = useTenant();
+  const { user } = useUser();
   const [searchQuery, setSearchQuery] = useState("");
 
   const handleSearch = (e: React.FormEvent) => {
@@ -77,8 +78,15 @@ export function TopNav() {
 
         {/* Right side - Notifications and User Menu */}
         <div className="flex items-center space-x-4">
-          {/* Tenant Switcher */}
-          <TenantSwitcher />
+          {/* Current Organization Display */}
+          {tenant && (
+            <div className="hidden md:flex items-center gap-2 px-3 py-2 rounded-lg bg-slate-800/50 border border-white/10">
+              <div className="w-6 h-6 bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-lg flex items-center justify-center">
+                <Building2 className="h-4 w-4 text-blue-400" />
+              </div>
+              <span className="text-sm font-medium text-white">{tenant.name}</span>
+            </div>
+          )}
           
           {/* Enhanced Notifications */}
           <Button 
@@ -102,9 +110,14 @@ export function TopNav() {
                 className="relative h-10 w-10 rounded-xl bg-slate-800/50 border border-white/10 hover:bg-slate-700/50 hover:border-blue-500/30 transition-all duration-300 group"
               >
                 <Avatar className="h-8 w-8 ring-2 ring-white/20 group-hover:ring-blue-500/30 transition-all duration-300">
-                  <AvatarImage src="/avatars/user.png" alt="User" />
+                  <AvatarImage src="/avatars/user.png" alt={user?.email || "User"} />
                   <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white font-semibold">
-                    JD
+                    {user ? (() => {
+                      const firstName = user.firstName?.[0] || '';
+                      const lastName = user.lastName?.[0] || '';
+                      const initials = `${firstName}${lastName}`.toUpperCase();
+                      return initials || user.email[0].toUpperCase();
+                    })() : 'U'}
                   </AvatarFallback>
                 </Avatar>
                 {/* Hover glow */}
@@ -124,10 +137,27 @@ export function TopNav() {
                         <User className="w-5 h-5 text-white" />
                       </div>
                       <div>
-                        <p className="text-sm font-semibold text-white">John Doe</p>
-                        <p className="text-xs text-slate-400">
-                          john.doe@example.com
+                        <p className="text-sm font-semibold text-white">
+                          {user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email.split('@')[0] : 'User'}
                         </p>
+                        <p className="text-xs text-slate-400">
+                          {user?.email || 'user@example.com'}
+                        </p>
+                        {user?.role && (
+                          <p className="text-xs text-blue-400 capitalize">
+                            {user.role.toLowerCase().replace('_', ' ')}
+                          </p>
+                        )}
+                        {user?.department && (
+                          <p className="text-xs text-slate-500">
+                            {user.department}
+                          </p>
+                        )}
+                        {user?.jobTitle && (
+                          <p className="text-xs text-slate-500">
+                            {user.jobTitle}
+                          </p>
+                        )}
                       </div>
                     </div>
                     <div className="flex items-center space-x-2 text-xs text-slate-400">

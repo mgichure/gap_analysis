@@ -5,6 +5,7 @@ import { createContext, useContext, ReactNode, useState, useEffect } from "react
 export interface Tenant {
   id: string;
   name: string;
+  slug: string;
   theme: {
     primary: string;
     secondary: string;
@@ -19,7 +20,6 @@ export interface Tenant {
 
 interface TenantContextType {
   tenant: Tenant | null;
-  setTenant: (tenant: Tenant) => void;
   isLoading: boolean;
 }
 
@@ -28,6 +28,7 @@ const TenantContext = createContext<TenantContextType | undefined>(undefined);
 const defaultTenant: Tenant = {
   id: "default",
   name: "Gap Analysis Platform",
+  slug: "default",
   theme: {
     primary: "#0f172a",
     secondary: "#64748b",
@@ -41,18 +42,30 @@ export function TenantProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // In a real app, you'd fetch tenant info from API based on subdomain or user context
-    const loadTenant = async () => {
+    // Load tenant information from localStorage (set during login)
+    const loadTenant = () => {
       try {
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 100));
+        const tenantId = localStorage.getItem('tenantId');
+        const tenantName = localStorage.getItem('tenantName');
+        const tenantSlug = localStorage.getItem('tenantSlug');
         
-        // For now, use default tenant
-        // In production, you'd determine tenant from:
-        // - Subdomain (tenant1.yourapp.com)
-        // - User's organization
-        // - URL parameters
-        setTenant(defaultTenant);
+        if (tenantId && tenantName && tenantSlug) {
+          // Use the tenant information from login
+          setTenant({
+            id: tenantId,
+            name: tenantName,
+            slug: tenantSlug,
+            theme: {
+              primary: "#0f172a",
+              secondary: "#64748b",
+              accent: "#3b82f6",
+            },
+            settings: {},
+          });
+        } else {
+          // Fallback to default if no tenant info found
+          setTenant(defaultTenant);
+        }
       } catch (error) {
         console.error("Failed to load tenant:", error);
         setTenant(defaultTenant);
@@ -66,7 +79,6 @@ export function TenantProvider({ children }: { children: ReactNode }) {
 
   const value: TenantContextType = {
     tenant,
-    setTenant,
     isLoading,
   };
 

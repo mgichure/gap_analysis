@@ -23,6 +23,17 @@ export interface AuthResponse {
   user: {
     id: string;
     email: string;
+    role: string;
+    firstName?: string;
+    lastName?: string;
+    phone?: string;
+    department?: string;
+    jobTitle?: string;
+  };
+  tenant: {
+    id: string;
+    name: string;
+    slug: string;
   };
 }
 
@@ -32,7 +43,23 @@ export async function loginAction(data: LoginData): Promise<{ success: boolean; 
       requireAuth: false,
     });
 
-    if (response) {
+    if (response && response.tenant && response.user) {
+      // Set tenant context in localStorage
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('tenantId', response.tenant.id);
+        localStorage.setItem('tenantName', response.tenant.name);
+        localStorage.setItem('tenantSlug', response.tenant.slug);
+        
+        // Set user context in localStorage
+        localStorage.setItem('userId', response.user.id);
+        localStorage.setItem('userEmail', response.user.email);
+        localStorage.setItem('userRole', response.user.role);
+        if (response.user.firstName) localStorage.setItem('userFirstName', response.user.firstName);
+        if (response.user.lastName) localStorage.setItem('userLastName', response.user.lastName);
+        if (response.user.phone) localStorage.setItem('userPhone', response.user.phone);
+        if (response.user.department) localStorage.setItem('userDepartment', response.user.department);
+        if (response.user.jobTitle) localStorage.setItem('userJobTitle', response.user.jobTitle);
+      }
       return { success: true };
     }
     
@@ -74,6 +101,21 @@ export async function logoutAction(): Promise<void> {
     const cookieStore = await cookies();
     cookieStore.delete('Authentication');
     cookieStore.delete('Refresh');
+    
+    // Clear tenant and user context from localStorage
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('tenantId');
+      localStorage.removeItem('tenantName');
+      localStorage.removeItem('tenantSlug');
+      localStorage.removeItem('userId');
+      localStorage.removeItem('userEmail');
+      localStorage.removeItem('userRole');
+      localStorage.removeItem('userFirstName');
+      localStorage.removeItem('userLastName');
+      localStorage.removeItem('userPhone');
+      localStorage.removeItem('userDepartment');
+      localStorage.removeItem('userJobTitle');
+    }
     
     // Redirect to signin page
     redirect('/signin');

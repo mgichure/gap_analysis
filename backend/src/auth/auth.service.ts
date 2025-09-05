@@ -145,4 +145,22 @@ export class AuthService {
   
     return user;
   }
+
+  async getUserTenant(userId: string) {
+    const user = await this.usersService.getUser({ id: userId });
+    if (!user.tenantId) {
+      throw new Error('User has no tenant assigned');
+    }
+    
+    const tenant = await this.prisma.tenant.findUnique({
+      where: { id: user.tenantId },
+      select: { id: true, name: true, slug: true }
+    });
+    
+    if (!tenant) {
+      throw new Error('Tenant not found');
+    }
+    
+    return tenant;
+  }
 }

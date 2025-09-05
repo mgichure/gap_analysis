@@ -35,6 +35,12 @@ export class UsersService {
       }
     });
 
+    // Add tenant filtering if tenant context is available
+    const tenantId = this.prisma.getCurrentTenantId();
+    if (tenantId) {
+      whereClause.tenantId = tenantId;
+    }
+
     const user = await this.prisma.user.findFirst({
       where: whereClause,
     });
@@ -45,7 +51,17 @@ export class UsersService {
   }
 
   async getUsers(): Promise<User[]> {
-    return this.prisma.user.findMany();
+    // Add tenant filtering if tenant context is available
+    const tenantId = this.prisma.getCurrentTenantId();
+    const whereClause: Prisma.UserWhereInput = {};
+    
+    if (tenantId) {
+      whereClause.tenantId = tenantId;
+    }
+    
+    return this.prisma.user.findMany({
+      where: whereClause,
+    });
   }
 
   async updateUser(query: Partial<User>, data: Partial<User>): Promise<User> {

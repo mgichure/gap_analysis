@@ -5,6 +5,7 @@ import { User } from '@prisma/client';
 import { Response } from 'express';
 import { AuthService } from './auth.service';
 import { JwtRefreshAuthGuard } from './guards/jwt-refresh-auth.guard';
+import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { GoogleAuthGuard } from './guards/google-auth.guard';
 import { 
   ApiTags, 
@@ -54,7 +55,24 @@ export class AuthController {
     @Res({ passthrough: true }) response: Response,
   ) {
     await this.authService.login(user, response);
-    return { message: 'Login successful', user: { id: user.id, email: user.email } };
+    
+    // Get tenant information
+    const tenant = await this.authService.getUserTenant(user.id);
+    
+    return { 
+      message: 'Login successful', 
+      user: { 
+        id: user.id, 
+        email: user.email, 
+        role: user.role,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        phone: user.phone,
+        department: user.department,
+        jobTitle: user.jobTitle
+      },
+      tenant: { id: tenant.id, name: tenant.name, slug: tenant.slug }
+    };
   }
 
   @Post('refresh')
@@ -79,6 +97,35 @@ export class AuthController {
   @ApiOperation({ summary: 'Initiate Google OAuth login' })
   @ApiResponse({ status: 302, description: 'Redirects to Google OAuth' })
   loginGoogle() {}
+
+  @Get('me')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get current user information' })
+  @ApiOkResponse({ 
+    description: 'Current user information',
+    type: AuthResponse 
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async getCurrentUser(@CurrentUser() user: User) {
+    // Get tenant information
+    const tenant = await this.authService.getUserTenant(user.id);
+    
+    return { 
+      message: 'User information retrieved successfully', 
+      user: { 
+        id: user.id, 
+        email: user.email, 
+        role: user.role,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        phone: user.phone,
+        department: user.department,
+        jobTitle: user.jobTitle
+      },
+      tenant: { id: tenant.id, name: tenant.name, slug: tenant.slug }
+    };
+  }
 
   @Get('google/callback')
   @UseGuards(GoogleAuthGuard)
