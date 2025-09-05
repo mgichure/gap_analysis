@@ -75,6 +75,6 @@ async function bootstrap() {
     customSiteTitle: 'Gap Analysis API Documentation',
   });
 
-  await app.listen(process.env.PORT ?? 3003);
+  await app.listen(process.env.PORT ?? 3000);
 }
 bootstrap();
