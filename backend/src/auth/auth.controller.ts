@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Res, UseGuards, Body } from '@nestjs/common';
+import { Controller, Get, Post, Res, UseGuards, Body, Param } from '@nestjs/common';
 import { LocalAuthGuard } from './guards/local-auth.guard';
 import { CurrentUser } from './current-user.decorator';
 import { User } from '@prisma/client';
@@ -18,6 +18,8 @@ import {
 import { LoginRequest } from './dto/login.request';
 import { AuthResponse } from './dto/auth.response';
 import { SignupRequest } from './dto/signup.request';
+import { ForgotPasswordRequest } from './dto/forgot-password.request';
+import { ResetPasswordRequest } from './dto/reset-password.request';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -136,5 +138,54 @@ export class AuthController {
     @Res({ passthrough: true }) response: Response,
   ) {
     await this.authService.login(user, response, true);
+  }
+
+  @Post('forgot-password')
+  @ApiOperation({ summary: 'Request password reset' })
+  @ApiBody({ type: ForgotPasswordRequest })
+  @ApiOkResponse({ 
+    description: 'Password reset email sent (if account exists)',
+    schema: {
+      type: 'object',
+      properties: {
+        message: { type: 'string', example: 'If an account with that email exists, a password reset link has been sent.' }
+      }
+    }
+  })
+  async forgotPassword(@Body() forgotPasswordData: ForgotPasswordRequest) {
+    return this.authService.forgotPassword(forgotPasswordData);
+  }
+
+  @Post('reset-password')
+  @ApiOperation({ summary: 'Reset password with token' })
+  @ApiBody({ type: ResetPasswordRequest })
+  @ApiOkResponse({ 
+    description: 'Password reset successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        message: { type: 'string', example: 'Password has been reset successfully' }
+      }
+    }
+  })
+  @ApiResponse({ status: 400, description: 'Invalid or expired reset token' })
+  async resetPassword(@Body() resetPasswordData: ResetPasswordRequest) {
+    return this.authService.resetPassword(resetPasswordData);
+  }
+
+  @Get('validate-reset-token/:token')
+  @ApiOperation({ summary: 'Validate password reset token' })
+  @ApiOkResponse({ 
+    description: 'Token validation result',
+    schema: {
+      type: 'object',
+      properties: {
+        valid: { type: 'boolean' },
+        message: { type: 'string' }
+      }
+    }
+  })
+  async validateResetToken(@Param('token') token: string) {
+    return this.authService.validateResetToken(token);
   }
 }

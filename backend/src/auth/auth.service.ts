@@ -1,14 +1,18 @@
-import { Injectable, UnauthorizedException, ConflictException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, ConflictException, BadRequestException, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { compare, hash } from 'bcryptjs';
 import { UsersService } from '../users/users.service';
 import { TenantsService } from '../tenants/tenants.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { EmailService } from '../email/email.service';
 import { User, UserRole } from '@prisma/client';
 import { Response } from 'express';
 import { TokenPayload } from './token-payload.interface';
 import { SignupRequest } from './dto/signup.request';
+import { ForgotPasswordRequest } from './dto/forgot-password.request';
+import { ResetPasswordRequest } from './dto/reset-password.request';
+import { randomBytes } from 'crypto';
 
 @Injectable()
 export class AuthService {
@@ -18,6 +22,7 @@ export class AuthService {
     private readonly prisma: PrismaService,
     private readonly configService: ConfigService,
     private readonly jwtService: JwtService,
+    private readonly emailService: EmailService,
   ) {}
 
   async login(user: User, response: Response, redirect = false) {
@@ -78,15 +83,19 @@ export class AuthService {
 
   async verifyUser(email: string, password: string) {
     try {
+      console.log('🔍 Verifying user with email:', email);
       const user = await this.usersService.getUser({
         email,
       });
+      console.log('👤 User found:', user ? 'Yes' : 'No', user?.email);
       const authenticated = await compare(password, user.password);
+      console.log('🔐 Password match:', authenticated);
       if (!authenticated) {
         throw new UnauthorizedException();
       }
       return user;
     } catch (error) {
+      console.log('❌ Verify user error:', error.message);
       throw new UnauthorizedException('Credentials are not valid.');
     }
   }
@@ -142,6 +151,18 @@ export class AuthService {
   
     // Auto login after signup
     await this.login(user, response);
+
+    // Send welcome email
+    try {
+      await this.emailService.sendWelcomeEmail(
+        user.email,
+        user.firstName,
+        tenant.name
+      );
+    } catch (error) {
+      console.error('Failed to send welcome email:', error);
+      // Don't fail signup if email fails
+    }
   
     return user;
   }
@@ -162,5 +183,128 @@ export class AuthService {
     }
     
     return tenant;
+  }
+
+  async forgotPassword(forgotPasswordData: ForgotPasswordRequest): Promise<{ message: string }> {
+    const { email } = forgotPasswordData;
+
+    try {
+      // Find user by email (without tenant filtering for password reset)
+      const user = await this.prisma.user.findFirst({
+        where: { email },
+        include: { tenant: true }
+      });
+
+      if (!user) {
+        // Don't reveal if user exists or not for security
+        return { message: 'If an account with that email exists, a password reset link has been sent.' };
+      }
+
+      // Generate reset token
+      const resetToken = randomBytes(32).toString('hex');
+      const expiresAt = new Date();
+      expiresAt.setHours(expiresAt.getHours() + 1); // Token expires in 1 hour
+
+      // Save reset token to database
+      await this.prisma.passwordResetToken.create({
+        data: {
+          token: resetToken,
+          userId: user.id,
+          expiresAt,
+        },
+      });
+
+      // Send password reset email
+      await this.emailService.sendPasswordResetEmail(
+        user.email,
+        resetToken,
+        user.firstName
+      );
+
+      return { message: 'If an account with that email exists, a password reset link has been sent.' };
+    } catch (error) {
+      console.error('Error in forgot password:', error);
+      return { message: 'If an account with that email exists, a password reset link has been sent.' };
+    }
+  }
+
+  async resetPassword(resetPasswordData: ResetPasswordRequest): Promise<{ message: string }> {
+    const { token, newPassword } = resetPasswordData;
+
+    try {
+      // Find valid reset token
+      const resetToken = await this.prisma.passwordResetToken.findFirst({
+        where: {
+          token,
+          used: false,
+          expiresAt: {
+            gt: new Date(), // Token not expired
+          },
+        },
+        include: { user: true },
+      });
+
+      if (!resetToken) {
+        throw new BadRequestException('Invalid or expired reset token');
+      }
+
+      // Hash new password
+      const hashedPassword = await hash(newPassword, 10);
+
+      // Update user password
+      await this.prisma.user.update({
+        where: { id: resetToken.userId },
+        data: {
+          password: hashedPassword,
+          passwordChangedAt: new Date(),
+        },
+      });
+
+      // Mark token as used
+      await this.prisma.passwordResetToken.update({
+        where: { id: resetToken.id },
+        data: { used: true },
+      });
+
+      // Invalidate all other reset tokens for this user
+      await this.prisma.passwordResetToken.updateMany({
+        where: {
+          userId: resetToken.userId,
+          used: false,
+        },
+        data: { used: true },
+      });
+
+      return { message: 'Password has been reset successfully' };
+    } catch (error) {
+      console.error('Error in reset password:', error);
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      throw new BadRequestException('Failed to reset password');
+    }
+  }
+
+  async validateResetToken(token: string): Promise<{ valid: boolean; message?: string }> {
+    try {
+      const resetToken = await this.prisma.passwordResetToken.findFirst({
+        where: {
+          token,
+          used: false,
+          expiresAt: {
+            gt: new Date(),
+          },
+        },
+      });
+
+      if (!resetToken) {
+        return { valid: false, message: 'Invalid or expired reset token' };
+      }
+
+      return { valid: true };
+    } catch (error) {
+      console.error('Error validating reset token:', error);
+      return { valid: false, message: 'Invalid reset token' };
+    }
   }
 }

@@ -5,6 +5,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { UsersModule } from './users/users.module';
 import { TenantsModule } from './tenants/tenants.module';
 import { AuthModule } from './auth/auth.module';
+import { EmailModule } from './email/email.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { MiddlewareConsumer, NestModule } from '@nestjs/common';
 import { TenantResolverMiddleware } from './common/tenant-resolver.middleware';
@@ -13,6 +14,7 @@ import { TenantResolverMiddleware } from './common/tenant-resolver.middleware';
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
     PrismaModule,
+    EmailModule,
     TenantsModule,
     UsersModule,
     AuthModule,

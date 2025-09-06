@@ -18,6 +18,8 @@ export class UsersService {
   }
 
   async getUser(query: Partial<User>): Promise<User> {
+    console.log('🔍 UsersService.getUser called with query:', query);
+    
     // Convert the query to use proper Prisma types
     const whereClause: Prisma.UserWhereInput = {};
     
@@ -35,15 +37,30 @@ export class UsersService {
       }
     });
 
-    // Add tenant filtering if tenant context is available
+    // Add tenant filtering if tenant context is available AND we're not looking up by email (for authentication)
+    // During login, we need to find the user by email without tenant filtering
     const tenantId = this.prisma.getCurrentTenantId();
-    if (tenantId) {
+    console.log('🏢 Current tenant ID:', tenantId);
+    console.log('📧 Query has email:', !!query.email);
+    
+    if (tenantId && !query.email) {
       whereClause.tenantId = tenantId;
+      console.log('🔒 Adding tenant filter:', tenantId);
+    } else {
+      console.log('🔓 No tenant filter applied');
     }
+
+    console.log('🔍 Final where clause:', JSON.stringify(whereClause, null, 2));
 
     const user = await this.prisma.user.findFirst({
       where: whereClause,
     });
+    
+    console.log('👤 User found:', user ? 'Yes' : 'No');
+    if (user) {
+      console.log('👤 User email:', user.email);
+    }
+    
     if (!user) {
       throw new NotFoundException('User not found');
     }
