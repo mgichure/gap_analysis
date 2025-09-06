@@ -1,4 +1,4 @@
-import { IsEmail, IsStrongPassword, IsString, IsEnum, IsOptional } from 'class-validator';
+import { IsEmail, IsString, IsEnum, IsOptional } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { UserRole } from '@prisma/client';
 
@@ -12,12 +12,11 @@ export class CreateUserRequest {
   email: string;
 
   @ApiProperty({
-    description: 'User password (must be strong)',
-    example: 'StrongPassword123!',
+    description: 'User password (any password accepted)',
+    example: 'anypassword',
     type: String,
-    minLength: 8,
   })
-  @IsStrongPassword()
+  @IsString()
   password: string;
 
   @ApiProperty({

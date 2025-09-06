@@ -39,11 +39,15 @@ export interface AuthResponse {
 
 export async function loginAction(data: LoginData): Promise<{ success: boolean; error?: string }> {
   try {
+    console.log('🔐 Attempting login for:', data.email);
     const response = await api.post<AuthResponse>('/auth/login', data, {
       requireAuth: false,
     });
 
+    console.log('📊 Login response:', response);
+
     if (response && response.tenant && response.user) {
+      console.log('✅ Login successful, setting localStorage data');
       // Set tenant context in localStorage
       if (typeof window !== 'undefined') {
         localStorage.setItem('tenantId', response.tenant.id);
@@ -59,13 +63,20 @@ export async function loginAction(data: LoginData): Promise<{ success: boolean; 
         if (response.user.phone) localStorage.setItem('userPhone', response.user.phone);
         if (response.user.department) localStorage.setItem('userDepartment', response.user.department);
         if (response.user.jobTitle) localStorage.setItem('userJobTitle', response.user.jobTitle);
+        
+        console.log('💾 localStorage data set:', {
+          userId: response.user.id,
+          userEmail: response.user.email,
+          userRole: response.user.role
+        });
       }
       return { success: true };
     }
     
+    console.log('❌ Login failed - no user/tenant data');
     return { success: false, error: 'Login failed' };
   } catch (error: any) {
-    console.error('Login error:', error);
+    console.error('❌ Login error:', error);
     return { 
       success: false, 
       error: error.problem?.detail || error.message || 'Login failed' 

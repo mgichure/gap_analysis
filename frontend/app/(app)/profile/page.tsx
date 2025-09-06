@@ -12,7 +12,7 @@ import { useUser } from "@/lib/user-context";
 import { toast } from "sonner";
 
 export default function ProfilePage() {
-  const { user, refreshUser } = useUser();
+  const { user, refreshUser, isLoading: userLoading, error: userError } = useUser();
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -71,6 +71,20 @@ export default function ProfilePage() {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
+  if (userLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <div className="w-16 h-16 bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-4">
+            <div className="w-8 h-8 border-2 border-slate-400 border-t-white rounded-full animate-spin" />
+          </div>
+          <h3 className="text-lg font-semibold text-slate-200 mb-2">Loading Profile...</h3>
+          <p className="text-slate-400">Please wait while we load your profile information.</p>
+        </div>
+      </div>
+    );
+  }
+
   if (!user) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -79,7 +93,25 @@ export default function ProfilePage() {
             <User className="w-8 h-8 text-slate-400" />
           </div>
           <h3 className="text-lg font-semibold text-slate-200 mb-2">No User Data</h3>
-          <p className="text-slate-400">Unable to load user profile information.</p>
+          <p className="text-slate-400 mb-2">Unable to load user profile information.</p>
+          {userError && (
+            <p className="text-red-400 text-sm mb-4">Error: {userError}</p>
+          )}
+          <div className="space-y-2">
+            <Button 
+              onClick={refreshUser}
+              className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 mr-2"
+            >
+              Try Again
+            </Button>
+            <Button 
+              onClick={() => window.location.href = '/signin'}
+              variant="outline"
+              className="border-slate-600 text-slate-300 hover:bg-slate-700"
+            >
+              Go to Sign In
+            </Button>
+          </div>
         </div>
       </div>
     );

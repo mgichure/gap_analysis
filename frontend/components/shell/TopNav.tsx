@@ -20,7 +20,7 @@ import { logoutAction } from "@/lib/auth-actions";
 
 export function TopNav() {
   const { tenant } = useTenant();
-  const { user, refreshUser } = useUser();
+  const { user, refreshUser, isLoading } = useUser();
   const [searchQuery, setSearchQuery] = useState("");
   const router = useRouter();
 
@@ -131,11 +131,14 @@ export function TopNav() {
               <Button 
                 variant="ghost" 
                 className="relative h-10 w-10 rounded-xl bg-slate-800/50 border border-white/10 hover:bg-slate-700/50 hover:border-blue-500/30 transition-all duration-300 group"
+                disabled={isLoading}
               >
                 <Avatar className="h-8 w-8 ring-2 ring-white/20 group-hover:ring-blue-500/30 transition-all duration-300">
                   <AvatarImage src="/avatars/user.png" alt={user?.email || "User"} />
                   <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white font-semibold">
-                    {user ? (() => {
+                    {isLoading ? (
+                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    ) : user ? (() => {
                       const firstName = user.firstName?.[0] || '';
                       const lastName = user.lastName?.[0] || '';
                       const initials = `${firstName}${lastName}`.toUpperCase();
@@ -157,36 +160,56 @@ export function TopNav() {
                   <div className="flex flex-col space-y-2">
                     <div className="flex items-center space-x-3">
                       <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
-                        <User className="w-5 h-5 text-white" />
+                        {isLoading ? (
+                          <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        ) : (
+                          <User className="w-5 h-5 text-white" />
+                        )}
                       </div>
-                      <div>
-                        <p className="text-sm font-semibold text-white">
-                          {user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email.split('@')[0] : 'User'}
-                        </p>
-                        <p className="text-xs text-slate-400">
-                          {user?.email || 'user@example.com'}
-                        </p>
-                        {user?.role && (
-                          <p className="text-xs text-blue-400 capitalize">
-                            {user.role.toLowerCase().replace('_', ' ')}
-                          </p>
-                        )}
-                        {user?.department && (
-                          <p className="text-xs text-slate-500">
-                            {user.department}
-                          </p>
-                        )}
-                        {user?.jobTitle && (
-                          <p className="text-xs text-slate-500">
-                            {user.jobTitle}
-                          </p>
+                      <div className="flex-1 min-w-0">
+                        {isLoading ? (
+                          <div className="space-y-2">
+                            <div className="h-4 bg-slate-700/50 rounded animate-pulse"></div>
+                            <div className="h-3 bg-slate-700/30 rounded animate-pulse w-3/4"></div>
+                          </div>
+                        ) : user ? (
+                          <>
+                            <p className="text-sm font-semibold text-white truncate">
+                              {`${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email.split('@')[0]}
+                            </p>
+                            <p className="text-xs text-slate-400 truncate">
+                              {user.email}
+                            </p>
+                            {user.role && (
+                              <p className="text-xs text-blue-400 capitalize">
+                                {user.role.toLowerCase().replace('_', ' ')}
+                              </p>
+                            )}
+                            {user.department && (
+                              <p className="text-xs text-slate-500 truncate">
+                                {user.department}
+                              </p>
+                            )}
+                            {user.jobTitle && (
+                              <p className="text-xs text-slate-500 truncate">
+                                {user.jobTitle}
+                              </p>
+                            )}
+                          </>
+                        ) : (
+                          <div className="space-y-1">
+                            <p className="text-sm font-semibold text-slate-400">Not logged in</p>
+                            <p className="text-xs text-slate-500">Please sign in to continue</p>
+                          </div>
                         )}
                       </div>
                     </div>
-                    <div className="flex items-center space-x-2 text-xs text-slate-400">
-                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                      <span>Online</span>
-                    </div>
+                    {!isLoading && user && (
+                      <div className="flex items-center space-x-2 text-xs text-slate-400">
+                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                        <span>Online</span>
+                      </div>
+                    )}
                   </div>
                 </DropdownMenuLabel>
               </div>
@@ -194,7 +217,8 @@ export function TopNav() {
               <div className="p-2">
                 <DropdownMenuItem 
                   onClick={handleProfileClick}
-                  className="flex items-center space-x-3 px-3 py-2.5 rounded-lg hover:bg-slate-700/50 transition-colors duration-200 cursor-pointer"
+                  disabled={isLoading || !user}
+                  className="flex items-center space-x-3 px-3 py-2.5 rounded-lg hover:bg-slate-700/50 transition-colors duration-200 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <div className="w-8 h-8 bg-slate-700/50 rounded-lg flex items-center justify-center">
                     <User className="w-4 h-4 text-slate-300" />
@@ -204,7 +228,8 @@ export function TopNav() {
                 
                 <DropdownMenuItem 
                   onClick={handleSettingsClick}
-                  className="flex items-center space-x-3 px-3 py-2.5 rounded-lg hover:bg-slate-700/50 transition-colors duration-200 cursor-pointer"
+                  disabled={isLoading || !user}
+                  className="flex items-center space-x-3 px-3 py-2.5 rounded-lg hover:bg-slate-700/50 transition-colors duration-200 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <div className="w-8 h-8 bg-slate-700/50 rounded-lg flex items-center justify-center">
                     <Settings className="w-4 h-4 text-slate-300" />
@@ -214,10 +239,15 @@ export function TopNav() {
 
                 <DropdownMenuItem 
                   onClick={handleRefreshUser}
-                  className="flex items-center space-x-3 px-3 py-2.5 rounded-lg hover:bg-slate-700/50 transition-colors duration-200 cursor-pointer"
+                  disabled={isLoading}
+                  className="flex items-center space-x-3 px-3 py-2.5 rounded-lg hover:bg-slate-700/50 transition-colors duration-200 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <div className="w-8 h-8 bg-slate-700/50 rounded-lg flex items-center justify-center">
-                    <RefreshCw className="w-4 h-4 text-slate-300" />
+                    {isLoading ? (
+                      <div className="w-4 h-4 border-2 border-slate-300/30 border-t-slate-300 rounded-full animate-spin" />
+                    ) : (
+                      <RefreshCw className="w-4 h-4 text-slate-300" />
+                    )}
                   </div>
                   <span className="text-slate-200">Refresh Profile</span>
                 </DropdownMenuItem>
@@ -226,7 +256,8 @@ export function TopNav() {
                 
                 <DropdownMenuItem 
                   onClick={handleLogout}
-                  className="flex items-center space-x-3 px-3 py-2.5 rounded-lg hover:bg-red-500/20 hover:text-red-300 transition-colors duration-200 cursor-pointer"
+                  disabled={isLoading || !user}
+                  className="flex items-center space-x-3 px-3 py-2.5 rounded-lg hover:bg-red-500/20 hover:text-red-300 transition-colors duration-200 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <div className="w-8 h-8 bg-red-500/20 rounded-lg flex items-center justify-center">
                     <LogOut className="w-4 h-4 text-red-400" />

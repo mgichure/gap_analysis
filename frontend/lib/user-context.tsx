@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, ReactNode, useState, useEffect } from "react";
-import { getCurrentUser } from "./auth-actions";
+import { api } from "./api-client";
 
 export interface User {
   id: string;
@@ -17,6 +17,7 @@ export interface User {
 interface UserContextType {
   user: User | null;
   isLoading: boolean;
+  error: string | null;
   refreshUser: () => Promise<void>;
 }
 
@@ -25,29 +26,66 @@ const UserContext = createContext<UserContextType | undefined>(undefined);
 export function UserProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const refreshUser = async () => {
     try {
       setIsLoading(true);
-      const result = await getCurrentUser();
-      if (result.user) {
-        setUser(result.user);
+      setError(null);
+      console.log("🔄 Refreshing user data...");
+      
+      // Check if we have auth token first
+      const authCookie = document.cookie
+        .split('; ')
+        .find(row => row.startsWith('Authentication='));
+      
+      if (!authCookie) {
+        console.log("❌ No auth cookie found, loading from localStorage");
+        loadUserFromStorage();
+        return;
+      }
+      
+      // Try to get user data from API
+      const response = await api.get<{ user: User }>('/auth/me');
+      console.log("📊 User data result:", response);
+      
+      if (response && response.user) {
+        console.log("✅ User data loaded:", response.user);
+        setUser(response.user);
         // Also update localStorage with fresh data
-        localStorage.setItem('userId', result.user.id);
-        localStorage.setItem('userEmail', result.user.email);
-        localStorage.setItem('userRole', result.user.role);
-        if (result.user.firstName) localStorage.setItem('userFirstName', result.user.firstName);
-        if (result.user.lastName) localStorage.setItem('userLastName', result.user.lastName);
-        if (result.user.phone) localStorage.setItem('userPhone', result.user.phone);
-        if (result.user.department) localStorage.setItem('userDepartment', result.user.department);
-        if (result.user.jobTitle) localStorage.setItem('userJobTitle', result.user.jobTitle);
+        localStorage.setItem('userId', response.user.id);
+        localStorage.setItem('userEmail', response.user.email);
+        localStorage.setItem('userRole', response.user.role);
+        if (response.user.firstName) localStorage.setItem('userFirstName', response.user.firstName);
+        if (response.user.lastName) localStorage.setItem('userLastName', response.user.lastName);
+        if (response.user.phone) localStorage.setItem('userPhone', response.user.phone);
+        if (response.user.department) localStorage.setItem('userDepartment', response.user.department);
+        if (response.user.jobTitle) localStorage.setItem('userJobTitle', response.user.jobTitle);
       } else {
+        console.log("❌ No user data received");
         setUser(null);
       }
-    } catch (error) {
-      console.error("Failed to refresh user:", error);
-      // Fallback to localStorage data
-      loadUserFromStorage();
+    } catch (error: any) {
+      console.error("❌ Failed to refresh user:", error);
+      setError(error.message || 'Failed to load user data');
+      
+      // If it's an authentication error, clear user data
+      if (error.status === 401 || error.status === 403) {
+        console.log("🔐 Authentication failed, clearing user data");
+        setUser(null);
+        // Clear localStorage
+        localStorage.removeItem('userId');
+        localStorage.removeItem('userEmail');
+        localStorage.removeItem('userRole');
+        localStorage.removeItem('userFirstName');
+        localStorage.removeItem('userLastName');
+        localStorage.removeItem('userPhone');
+        localStorage.removeItem('userDepartment');
+        localStorage.removeItem('userJobTitle');
+      } else {
+        // For other errors, try to load from localStorage
+        loadUserFromStorage();
+      }
     } finally {
       setIsLoading(false);
     }
@@ -55,9 +93,12 @@ export function UserProvider({ children }: { children: ReactNode }) {
 
   const loadUserFromStorage = () => {
     try {
+      console.log("📦 Loading user from localStorage...");
       const userId = localStorage.getItem('userId');
       const userEmail = localStorage.getItem('userEmail');
       const userRole = localStorage.getItem('userRole');
+      
+      console.log("📦 localStorage data:", { userId, userEmail, userRole });
       
       if (userId && userEmail && userRole) {
         const userData = {
@@ -70,12 +111,14 @@ export function UserProvider({ children }: { children: ReactNode }) {
           department: localStorage.getItem('userDepartment') || undefined,
           jobTitle: localStorage.getItem('userJobTitle') || undefined,
         };
+        console.log("✅ User data loaded from localStorage:", userData);
         setUser(userData);
       } else {
+        console.log("❌ No user data in localStorage");
         setUser(null);
       }
     } catch (error) {
-      console.error("Failed to load user from storage:", error);
+      console.error("❌ Failed to load user from storage:", error);
       setUser(null);
     }
   };
@@ -84,13 +127,24 @@ export function UserProvider({ children }: { children: ReactNode }) {
     // First try to load from localStorage for immediate display
     loadUserFromStorage();
     
-    // Then try to fetch fresh data from API
-    refreshUser();
+    // Then try to fetch fresh data from API (only if we have auth cookie)
+    const authCookie = document.cookie
+      .split('; ')
+      .find(row => row.startsWith('Authentication='));
+    
+    if (authCookie) {
+      console.log("🍪 Auth cookie found, refreshing user data");
+      refreshUser();
+    } else {
+      console.log("❌ No auth cookie found, using localStorage data only");
+      setIsLoading(false);
+    }
   }, []);
 
   const value: UserContextType = {
     user,
     isLoading,
+    error,
     refreshUser,
   };
 
