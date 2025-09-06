@@ -13,6 +13,7 @@ import {
   FolderOpen,
   ClipboardList,
   Sparkles,
+  User,
 } from "lucide-react";
 
 interface NavItem {
@@ -65,6 +66,12 @@ const navItems: NavItem[] = [
     href: "/reports",
     icon: BarChart3,
     description: "Analytics & Insights",
+  },
+  {
+    title: "Profile",
+    href: "/profile",
+    icon: User,
+    description: "User Profile",
   },
   {
     title: "Settings",

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Search, Bell, User, Settings, LogOut, Sparkles, Zap, Building2 } from "lucide-react";
+import { Search, Bell, User, Settings, LogOut, Sparkles, Zap, Building2, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -15,16 +15,39 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useTenant } from "@/lib/tenancy";
 import { useUser } from "@/lib/user-context";
+import { useRouter } from "next/navigation";
+import { logoutAction } from "@/lib/auth-actions";
 
 export function TopNav() {
   const { tenant } = useTenant();
-  const { user } = useUser();
+  const { user, refreshUser } = useUser();
   const [searchQuery, setSearchQuery] = useState("");
+  const router = useRouter();
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     // Implement search functionality
     console.log("Searching for:", searchQuery);
+  };
+
+  const handleLogout = async () => {
+    try {
+      await logoutAction();
+    } catch (error) {
+      console.error("Logout error:", error);
+    }
+  };
+
+  const handleProfileClick = () => {
+    router.push("/profile");
+  };
+
+  const handleSettingsClick = () => {
+    router.push("/settings");
+  };
+
+  const handleRefreshUser = async () => {
+    await refreshUser();
   };
 
   return (
@@ -169,23 +192,42 @@ export function TopNav() {
               </div>
               
               <div className="p-2">
-                <DropdownMenuItem className="flex items-center space-x-3 px-3 py-2.5 rounded-lg hover:bg-slate-700/50 transition-colors duration-200">
+                <DropdownMenuItem 
+                  onClick={handleProfileClick}
+                  className="flex items-center space-x-3 px-3 py-2.5 rounded-lg hover:bg-slate-700/50 transition-colors duration-200 cursor-pointer"
+                >
                   <div className="w-8 h-8 bg-slate-700/50 rounded-lg flex items-center justify-center">
                     <User className="w-4 h-4 text-slate-300" />
                   </div>
                   <span className="text-slate-200">Profile</span>
                 </DropdownMenuItem>
                 
-                <DropdownMenuItem className="flex items-center space-x-3 px-3 py-2.5 rounded-lg hover:bg-slate-700/50 transition-colors duration-200">
+                <DropdownMenuItem 
+                  onClick={handleSettingsClick}
+                  className="flex items-center space-x-3 px-3 py-2.5 rounded-lg hover:bg-slate-700/50 transition-colors duration-200 cursor-pointer"
+                >
                   <div className="w-8 h-8 bg-slate-700/50 rounded-lg flex items-center justify-center">
                     <Settings className="w-4 h-4 text-slate-300" />
                   </div>
                   <span className="text-slate-200">Settings</span>
                 </DropdownMenuItem>
+
+                <DropdownMenuItem 
+                  onClick={handleRefreshUser}
+                  className="flex items-center space-x-3 px-3 py-2.5 rounded-lg hover:bg-slate-700/50 transition-colors duration-200 cursor-pointer"
+                >
+                  <div className="w-8 h-8 bg-slate-700/50 rounded-lg flex items-center justify-center">
+                    <RefreshCw className="w-4 h-4 text-slate-300" />
+                  </div>
+                  <span className="text-slate-200">Refresh Profile</span>
+                </DropdownMenuItem>
                 
                 <DropdownMenuSeparator className="border-white/10 my-2" />
                 
-                <DropdownMenuItem className="flex items-center space-x-3 px-3 py-2.5 rounded-lg hover:bg-red-500/20 hover:text-red-300 transition-colors duration-200">
+                <DropdownMenuItem 
+                  onClick={handleLogout}
+                  className="flex items-center space-x-3 px-3 py-2.5 rounded-lg hover:bg-red-500/20 hover:text-red-300 transition-colors duration-200 cursor-pointer"
+                >
                   <div className="w-8 h-8 bg-red-500/20 rounded-lg flex items-center justify-center">
                     <LogOut className="w-4 h-4 text-red-400" />
                   </div>
